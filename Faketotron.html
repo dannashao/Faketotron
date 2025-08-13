@@ -2,88 +2,76 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>Fytotron Client – Protocol Editor (Simulation)</title>
+<title>Fytotron Client – Protocol Editor (Step 5)</title>
 <meta http-equiv="X-UA-Compatible" content="IE=edge" />
 <style>
-  /* ================= FIXED WINDOW ================= */
-  :root{
-    --bg:#eef1f3; --panel:#ffffff; --bar:#cfd9eb; --field:#c6e6ee;
-    --ink:#222; --b:#9aa5b1; --bd:#6b7a8a; --accent:#6e8fb5; --rule:#bac6d9;
-  }
+  :root{--bg:#eef1f3;--panel:#fff;--bar:#cfd9eb;--field:#c6e6ee;--ink:#222;--b:#9aa5b1;--bd:#6b7a8a;--accent:#6e8fb5;--rule:#bac6d9}
   html,body{height:100%}
   body{margin:0;background:var(--bg);color:var(--ink);font:14px "Segoe UI",Tahoma,Arial,sans-serif;width:1200px;height:800px;overflow:hidden}
-
-  /* ================= TOP TABS ================= */
   .tabs{height:48px;display:flex;align-items:flex-end;gap:8px;padding:0 8px}
   .tab{height:36px;padding:0 18px;border:1px solid var(--b);border-bottom:none;border-radius:4px 4px 0 0;background:#f6f7f9;display:flex;align-items:center}
   .tab.active{background:#fff;font-weight:600}
-
-  /* ================= MAIN SPLIT ================= */
   .row{display:flex;gap:12px;padding:0 12px 12px;height:calc(100% - 48px)}
   .left{width:800px;background:var(--panel);border:1px solid var(--b);display:flex;flex-direction:column}
   .right{width:360px;margin-left:auto;background:var(--panel);border:1px solid var(--b);display:flex;flex-direction:column}
-
-  /* toolbar */
   .toolbar{height:44px;background:var(--bar);border-bottom:1px solid var(--b);display:flex;align-items:center;padding:0 10px;gap:12px}
   .btn{min-width:110px;height:28px;border:1px solid var(--b);background:linear-gradient(#fff,#e6e9ee);border-radius:4px;cursor:pointer}
+  .btn.small{min-width:70px;height:24px}
   .btn:disabled{opacity:.5;cursor:not-allowed}
   .label{font-weight:600}
-  .field{height:28px;width:140px;border:1px solid var(--bd);background:var(--field);border-radius:3px;text-align:center;line-height:28px}
-
-  /* group tabs */
+  .field{height:28px;min-width:140px;border:1px solid var(--bd);background:var(--field);border-radius:3px;text-align:center;line-height:28px;padding:0 8px}
   .group-tabs{height:30px;display:flex;align-items:center;gap:6px;padding:6px 8px;background:#f3f3f3;border-bottom:1px solid var(--b);flex-wrap:wrap}
   .gtab{padding:4px 8px;border:1px solid var(--b);border-radius:4px;background:#eee;font-size:12px;cursor:pointer}
   .gtab.active{background:#fff;border-color:var(--accent)}
-
-  /* workspace */
   .workspace{flex:1;background:#e6e6e6;margin:8px;border:1px solid var(--b);overflow:auto}
-  .placeholder{height:100%;display:flex;align-items:center;justify-content:center;color:#777;font-style:italic}
 
-  /* right panel */
+  .ph-list{background:#fff;border:1px solid var(--b)}
+  .ph-row{display:grid;grid-template-columns:40px 120px 120px 1fr 120px;align-items:center;border-bottom:1px solid #dde2ea;padding:8px 10px;min-height:48px}
+  .ph-row.tall{min-height:110px}
+  .ph-row.header{background:#f2f5f9;font-weight:600}
+  .ph-row.dragging{opacity:.6}
+  .ph-actions{display:flex;flex-direction:column;gap:6px;justify-content:center;align-items:stretch}
+  .pill{display:inline-block;background:#eaf3ff;border:1px solid #8aa4c2;padding:2px 6px;border-radius:4px;font-size:12px;margin-right:6px}
+  .clickable{cursor:pointer}
+
+  .sum-grid{display:grid;grid-template-columns:repeat(4, auto);gap:6px 16px;align-items:center}
+  .sum-grid .l{color:#475769}
+  .sum-grid .v{background:#f3f7fb;border:1px solid #c9d3e6;border-radius:3px;padding:2px 6px}
+
   .right-head{padding:10px}
   .select{width:100%;height:30px;border:1px solid var(--b);border-radius:4px}
   .section{padding:8px 10px 4px}
   .rule{height:1px;background:var(--rule);margin:8px 0 12px}
   .section h5{margin:0;font-weight:600;color:#37455a}
-  .file-row{display:flex;gap:12px;padding:0 10px 8px}
-  .file-row .btn{min-width:90px}
+  .file-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:0 10px 8px}
+  .file-row .btn{min-width:unset;width:100%}
   .prop{display:grid;grid-template-columns:120px 1fr auto;gap:8px;align-items:center;padding:6px 10px}
   .input, textarea{border:1px solid var(--bd);background:var(--field);border-radius:3px;padding:6px}
   textarea{height:90px;resize:none}
   .ro{background:#e9eef2;text-align:center}
   .instruction{margin-top:auto;border-top:1px solid var(--b);padding:10px;font-size:12px;color:#556;background:#f7f8fb}
 
-  /* ================= MODALS ================= */
   .overlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.45)}
   .modal{width:760px;background:#4a5f73;padding:22px;border-radius:6px;box-shadow:0 8px 20px rgba(0,0,0,.35)}
   .modal-title{color:#fff;font-weight:600;text-align:center;margin:0 0 10px}
   .modal-inner{background:#f2f2f2;border:1px solid var(--bd);padding:14px}
-
-  /* Variable manager content */
   .vm-body{display:grid;grid-template-columns:1fr 140px;gap:10px}
   .vg-tabs{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}
   .vg-tab{padding:6px 10px;border:1px solid var(--b);background:#e7ebef;border-radius:4px;font-size:12px;cursor:pointer}
   .vg-tab.active{background:#fff;border-color:var(--accent)}
   .vg-col{background:#fff;border:1px solid var(--b);padding:8px;max-height:260px;overflow:auto}
-  .pill-row{display:flex;align-items:center;gap:6px;margin:4px 0;}
-  .pill{display:inline-block;background:#eaf3ff;border:1px solid #8aa4c2;padding:4px 8px;border-radius:4px;font-size:12px}
+  .pill-row{display:flex;align-items:center;gap:6px;margin:4px 0}
   .mini{min-width:70px;height:24px}
   .side-actions{display:flex;flex-direction:column;gap:8px}
   .footer-line{display:flex;justify-content:space-between;color:#555;font-size:12px;margin-top:6px}
-
-  /* Sub-dialogs */
   .sub{width:680px}
   .sub-wide{width:820px}
   .sub-inner{background:#d6dee6;border:1px solid var(--bd);padding:16px;border-radius:6px}
-  .sub-title{color:#fff;text-align:center;margin:0 0 10px}
-  .listbox{background:#f7f9fb;border:1px solid var(--b);height:300px;overflow:auto;padding:10px}
-  .chk{margin-right:8px}
-  .flex-end{display:flex;justify-content:flex-end;gap:10px;margin-top:10px}
-  .soft{opacity:.85}
+  .listbox{background:#f7f9fb;border:1px solid var(--b);max-height:360px;overflow:auto;padding:10px}
+  .grid2{display:grid;grid-template-columns:160px 1fr;gap:8px;align-items:center}
 </style>
 </head>
 <body>
-  <!-- tabs -->
   <div class="tabs">
     <div class="tab">MAIN</div>
     <div class="tab">EXPERIMENT</div>
@@ -95,7 +83,6 @@
   </div>
 
   <div class="row">
-    <!-- LEFT workspace -->
     <div class="left">
       <div class="toolbar">
         <button class="btn" id="btnEditGroups">Edit Groups</button>
@@ -106,12 +93,15 @@
       </div>
       <div id="groupTabs" class="group-tabs" style="display:none;"></div>
       <div class="workspace" id="workspace">
-        <div class="placeholder" id="blankState">Create a NEW protocol to initialize default groups.</div>
-        <div id="phaseScroller" style="display:none; padding:10px;"></div>
+        <div id="phaseArea">
+          <div class="ph-list" id="phList" style="display:none">
+            <div class="ph-row header"><div>#</div><div>Duration</div><div>Phase</div><div>Summary</div><div>Actions</div></div>
+          </div>
+          <div class="placeholder" id="blankState">Create a NEW protocol to initialize default groups.</div>
+        </div>
       </div>
     </div>
 
-    <!-- RIGHT properties -->
     <div class="right">
       <div class="right-head"><select class="select"><option>Fytotron</option></select></div>
       <div class="section"><div class="rule"></div><h5>Protocol File</h5></div>
@@ -119,18 +109,21 @@
         <button class="btn" id="btnNew">NEW</button>
         <button class="btn" id="btnErase">Erase</button>
         <button class="btn" id="btnLoad" disabled>Load..</button>
-        <button class="btn" id="btnSave" disabled>Save..</button>
+        <button class="btn" id="btnSave">Save..</button>
       </div>
       <div class="section"><div class="rule"></div><h5>Protocol Properties</h5></div>
       <div class="prop"><label>Description:</label><textarea id="desc"></textarea><div></div></div>
-      <div class="prop"><label>Logic start time:</label><input id="logic" class="input" value="- not set -" /><button class="btn" id="btnEraseTime">Erase Time</button></div>
+      <div class="prop"><label>Logic start time:</label>
+        <input id="logic" class="input" placeholder="HH:MM:SS or leave blank" value="- not set -" />
+        <button class="btn" id="btnEraseTime">Erase Time</button>
+      </div>
       <div class="prop"><label>Repeat:</label><input id="repeat" class="input" value="Infinitely times" /><button class="btn" id="btnSetInf">Set Infinitely</button></div>
       <div class="prop"><label>Duration:</label><input id="duration" class="input ro" value="0 hours" readonly /><div></div></div>
-      <div class="instruction">Reminder: this is a **simulation**. Build groups/phases, then we will **download encoded JSON (.fyt)** that the real app can load.</div>
+      <div class="instruction">Simulation: phases add at bottom; each row has “add below” and “remove”. Click **Duration**, **Phase** or **Summary** to edit. Drag to reorder. Save exports JSON + FYT.</div>
     </div>
   </div>
 
-  <!-- Variable Management Modal -->
+  <!-- Protocol Variables Management -->
   <div class="overlay" id="dlgGroups">
     <div class="modal">
       <h3 class="modal-title">Fytotron – Protocol Variables Management</h3>
@@ -153,90 +146,101 @@
     </div>
   </div>
 
-  <!-- Sub: New Group Of Variables -->
-  <div class="overlay" id="dlgNewGroup">
-    <div class="modal sub">
-      <h3 class="modal-title">New Group Of Variables</h3>
-      <div class="modal-inner sub-inner">
-        <div style="display:grid;grid-template-columns:100px 1fr 60px;align-items:center;gap:10px;">
-          <label>Type:</label>
-          <select id="ngType" class="select" style="height:32px"></select>
-          <div></div>
-          <label>Name:</label>
-          <input id="ngName" class="input" />
-          <div></div>
-        </div>
-        <div class="flex-end"><button class="btn" id="ngCancel">Cancel</button><button class="btn" id="ngOK">OK</button></div>
-      </div>
-    </div>
-  </div>
+  <!-- Sub-modals -->
+  <div class="overlay" id="dlgNewGroup"><div class="modal sub"><h3 class="modal-title">New Group Of Variables</h3><div class="modal-inner sub-inner"><div class="grid2"><label>Type:</label><select id="ngType" class="select" style="height:32px"></select><label>Name:</label><input id="ngName" class="input" /></div><div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px;"><button class="btn" id="ngCancel">Cancel</button><button class="btn" id="ngOK">OK</button></div></div></div></div>
+  <div class="overlay" id="dlgChooseGroup"><div class="modal sub-wide"><h3 class="modal-title">Choose targed group</h3><div class="modal-inner sub-inner"><div class="listbox" id="cgList"></div><div style="display:flex;justify-content:flex-end;margin-top:10px"><button class="btn" id="cgCancel">Cancel</button></div></div></div></div>
+  <div class="overlay" id="dlgAddVar"><div class="modal sub-wide"><h3 class="modal-title">Choose variable(s) for group: <span id="avGroupName"></span></h3><div class="modal-inner sub-inner"><div class="listbox" id="avList"></div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;"><div style="display:flex;gap:8px;"><button class="btn small" id="avAll">SELECT ALL</button><button class="btn small" id="avNone">SELECT NONE</button></div><div>All: <span id="avAllCount">0</span> | Selected: <span id="avSelCount">0</span></div></div><div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px;"><button class="btn" id="avCancel">Cancel</button><button class="btn" id="avOK">OK</button></div></div></div></div>
+  <div class="overlay" id="dlgWarn"><div class="modal sub"><h3 class="modal-title">Notice</h3><div class="modal-inner sub-inner"><div style="background:#f0f4f8;border:1px solid var(--b);padding:24px;text-align:center">Another group of same type doesn't exist.<br/>Create some before move variable.</div><div style="display:flex;justify-content:flex-end;margin-top:12px;"><button class="btn" id="warnOK">OK</button></div></div></div></div>
 
-  <!-- Sub: Choose target group -->
-  <div class="overlay" id="dlgChooseGroup">
-    <div class="modal sub-wide">
-      <h3 class="modal-title">Choose targed group</h3>
-      <div class="modal-inner sub-inner">
-        <div class="listbox" id="cgList"></div>
-        <div class="flex-end"><button class="btn" id="cgCancel">Cancel</button></div>
-      </div>
-    </div>
+  <!-- Phase editor -->
+  <div class="overlay" id="dlgPhase"><div class="modal sub-wide"><h3 class="modal-title">Add / Edit Phase</h3><div class="modal-inner sub-inner"><div class="grid2">
+    <label>Phase type:</label>
+    <select id="phType" class="select">
+      <option value="const">Constant</option>
+      <option value="ramp">Ramp</option>
+      <option value="sin">Sine</option>
+      <option value="cloud">Cloud</option>
+    </select>
+    <div id="phFields" style="grid-column:1/-1"></div>
   </div>
-
-  <!-- Sub: Add variable(s) to group (multi-select) -->
-  <div class="overlay" id="dlgAddVar">
-    <div class="modal sub-wide">
-      <h3 class="modal-title">Choose variable(s) for group: <span id="avGroupName"></span></h3>
-      <div class="modal-inner sub-inner">
-        <div class="listbox" id="avList"></div>
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;">
-          <div style="display:flex;gap:8px;">
-            <button class="btn mini" id="avAll">SELECT ALL</button>
-            <button class="btn mini" id="avNone">SELECT NONE</button>
-          </div>
-          <div class="soft">Number of all variables: <span id="avAllCount">0</span> &nbsp; | &nbsp; Number of selected variables: <span id="avSelCount">0</span></div>
-        </div>
-        <div class="flex-end"><button class="btn" id="avCancel">Cancel</button><button class="btn" id="avOK">OK</button></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Sub: Warning (no same-type group) -->
-  <div class="overlay" id="dlgWarn">
-    <div class="modal sub"><h3 class="modal-title">Notice</h3>
-      <div class="modal-inner sub-inner">
-        <div style="background:#f0f4f8;border:1px solid var(--b);padding:24px;text-align:center">Another group of same type doesn't exist.<br/>Create some before move variable.</div>
-        <div class="flex-end"><button class="btn" id="warnOK">OK</button></div>
-      </div>
-    </div>
-  </div>
+  <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px;"><button class="btn" id="phCancel">Cancel</button><button class="btn" id="phOK">OK</button></div>
+  </div></div></div>
 
 <script>
-// ================= DATA MODEL =================
-const INVENTORY = {
-  "CO2":["CO2"],
-  "Cool White":["Cool White 1","Cool White 2"],
-  "Deep-Red":["Deep-Red 1","Deep-Red 2"],
-  "Far-Red":["Far-Red 1","Far-Red 2"],
-  "Humidity":["Humidity"],
-  "Hydroponics":["Hydroponics 1","Hydroponics 2"],
-  "Temperature":["Temperature"]
-};
+// ===== Constants & mappings =====
 const TAB_ORDER=["CO2","Cool White","Deep-Red","Far-Red","Humidity","Hydroponics","Temperature"];
+const INVENTORY={"CO2":["CO2"],"Cool White":["Cool White 1","Cool White 2"],"Deep-Red":["Deep-Red 1","Deep-Red 2"],"Far-Red":["Far-Red 1","Far-Red 2"],"Humidity":["Humidity"],"Hydroponics":["Hydroponics 1","Hydroponics 2"],"Temperature":["Temperature"]};
+const MACHINE_VAR={"CO2":{"CO2":"CO2_Set"},"Cool White":{"Cool White 1":"CoolWhite1","Cool White 2":"CoolWhite2"},"Deep-Red":{"Deep-Red 1":"DeepRed1","Deep-Red 2":"DeepRed2"},"Far-Red":{"Far-Red 1":"FarRed1","Far-Red 2":"FarRed2"},"Humidity":{"Humidity":"Rh_Set"},"Hydroponics":{"Hydroponics 1":"Run1","Hydroponics 2":"Run2"},"Temperature":{"Temperature":"T_Set"}};
+const TYPE_UNIT={"CO2":{type:"co2",unit:"ppm"},"Cool White":{type:"white",unit:"percent"},"Deep-Red":{type:"deep-red",unit:"percent"},"Far-Red":{type:"far-red",unit:"percent"},"Humidity":{type:"humidity",unit:"percent"},"Hydroponics":{type:"hydroponie",unit:""},"Temperature":{type:"temperature",unit:"celsius"}};
 
-let protocol=null;                 // becomes non-null after NEW
-let groups=[];                     // {id,type,name,vars:[...],phases:[]}
-let unassigned={};                 // {type: [varNames]}
-let activeGroupId=null;
+const RANGES={
+  "CO2":{min:0,max:1000,int:true},
+  "Cool White":{min:0,max:100,int:true},
+  "Deep-Red":{min:0,max:100,int:true},
+  "Far-Red":{min:0,max:100,int:true},
+  "Humidity":{min:35,max:100,int:true},
+  "Hydroponics":{min:0,max:1,int:true},
+  "Temperature":{min:0,max:500,int:true,scale:10}
+};
+const DEF={
+  const:{
+    "CO2":{value:1000,duration:"01:00:00"},
+    "Cool White":{value:100,duration:"01:00:00"},
+    "Deep-Red":{value:100,duration:"01:00:00"},
+    "Far-Red":{value:100,duration:"01:00:00"},
+    "Humidity":{value:90,duration:"01:00:00"},
+    "Hydroponics":{value:1,duration:"01:00:00"},
+    "Temperature":{value:40,duration:"01:00:00"}
+  },
+  ramp:{
+    "CO2":{start:0,end:1000,duration:"01:00:00"},
+    "Cool White":{start:0,end:100,duration:"01:00:00"},
+    "Deep-Red":{start:0,end:100,duration:"01:00:00"},
+    "Far-Red":{start:0,end:100,duration:"01:00:00"},
+    "Humidity":{start:35,end:90,duration:"01:00:00"},
+    "Temperature":{start:10,end:40,duration:"01:00:00"}
+  },
+  sin:{
+    "CO2":{min:0,max:1000,period:"00:10:00",phaseOffset:"00:00:00",duration:"01:00:00"},
+    "Cool White":{min:0,max:100,period:"01:00:00",phaseOffset:"00:00:00",duration:"01:00:00"},
+    "Deep-Red":{min:0,max:100,period:"01:00:00",phaseOffset:"00:00:00",duration:"01:00:00"},
+    "Far-Red":{min:0,max:100,period:"01:00:00",phaseOffset:"00:00:00",duration:"01:00:00"},
+    "Humidity":{min:35,max:90,period:"01:00:00",phaseOffset:"00:00:00",duration:"01:00:00"},
+    "Temperature":{min:10,max:40,period:"01:00:00",phaseOffset:"00:00:00",duration:"01:00:00"}
+  },
+  cloud:{
+    "CO2":{amplitude:100,offset:0,cloud_density:0,cloud_position:0,cloud_duration_mean:60,cloud_duration_var:5,fluctuation_mean_ratio:0.15,fluctuation_var:10,cloud_drop_coeff:0.5,duration:"01:00:00"},
+    "Cool White":{amplitude:100,offset:0,cloud_density:0,cloud_position:0,cloud_duration_mean:60,cloud_duration_var:5,fluctuation_mean_ratio:0.15,fluctuation_var:10,cloud_drop_coeff:0.5,duration:"01:00:00"},
+    "Deep-Red":{amplitude:100,offset:0,cloud_density:0,cloud_position:0,cloud_duration_mean:60,cloud_duration_var:5,fluctuation_mean_ratio:0.15,fluctuation_var:10,cloud_drop_coeff:0.5,duration:"01:00:00"},
+    "Far-Red":{amplitude:100,offset:0,cloud_density:0,cloud_position:0,cloud_duration_mean:60,cloud_duration_var:5,fluctuation_mean_ratio:0.15,fluctuation_var:10,cloud_drop_coeff:0.5,duration:"01:00:00"},
+    "Humidity":{amplitude:100,offset:0,cloud_density:0,cloud_position:0,cloud_duration_mean:60,cloud_duration_var:5,fluctuation_mean_ratio:0.15,fluctuation_var:10,cloud_drop_coeff:0.5,duration:"01:00:00"},
+    "Temperature":{amplitude:10,offset:0,cloud_density:0,cloud_position:0,cloud_duration_mean:60,cloud_duration_var:5,fluctuation_mean_ratio:0.15,fluctuation_var:10,cloud_drop_coeff:0.5,duration:"01:00:00"}
+  }
+};
 
-const $=s=>document.querySelector(s);
-const $$=s=>Array.from(document.querySelectorAll(s));
+let protocol=null; let groups=[]; let unassigned={}; let activeGroupId=null; let vmSelectedGroupId=null; let insertAfterIndex=null;
+const $=s=>document.querySelector(s), $$=s=>Array.from(document.querySelectorAll(s));
 
-function sortGroups(){
-  groups.sort((a,b)=>{
-    const ai=TAB_ORDER.indexOf(a.type), bi=TAB_ORDER.indexOf(b.type);
-    if(ai!==bi) return ai-bi; // group by type order
-    return a.name.localeCompare(b.name); // within type by name
-  });
+// ===== Utility/validation =====
+function isHHMMSS(v){
+  const m=/(\d{2}):(\d{2}):(\d{2})$/.exec(v||'');
+  if(!m) return false;
+  const H=+m[1], M=+m[2], S=+m[3];
+  return H>=0 && H<24 && M>=0 && M<60 && S>=0 && S<60;
+}
+function intInRange(n, min, max){return Number.isInteger(n) && n>=min && n<=max;}
+function sortGroups(){groups.sort((a,b)=>{const ai=TAB_ORDER.indexOf(a.type),bi=TAB_ORDER.indexOf(b.type);if(ai!==bi)return ai-bi;return a.name.localeCompare(b.name);});}
+function isProtocolValid(){const hasAll=TAB_ORDER.every(t=>groups.some(g=>g.type===t));const noneUnassigned=Object.values(unassigned).every(a=>a.length===0);return hasAll&&noneUnassigned;}
+
+function hhmmssToHours(s){if(!isHHMMSS(s)) return 0;const [H,M,S]=s.split(':').map(Number);return (H||0)+(M||0)/60+(S||0)/3600}
+
+// compute total hours per group
+function hoursOfGroup(g){return (g.phases||[]).reduce((sum,p)=>sum+hhmmssToHours(p.duration||"00:00:00"),0);}
+
+function refreshRightDuration(){
+  // longest duration across groups shown on right panel
+  const maxH = groups.length? Math.max(...groups.map(hoursOfGroup)) : 0;
+  $('#duration').value = `${maxH.toFixed(2)} hours`;
 }
 
 function refreshUI(){
@@ -244,193 +248,326 @@ function refreshUI(){
   const has=groups.length>0;
   $('#groupTabs').style.display=has?'flex':'none';
   $('#blankState').style.display=has?'none':'flex';
-  $('#phaseScroller').style.display=has?'block':'none';
-  $('#btnClearGroup').disabled=!has; $('#btnAddPhase').disabled=!has; $('#btnSave').disabled=!protocol || !isProtocolValid();
-  renderTabs(); renderPhases(); buildVM();
-}
-
-function isProtocolValid(){
-  const hasAll=TAB_ORDER.every(t=>groups.some(g=>g.type===t));
-  const noneUnassigned=Object.values(unassigned).every(arr=>arr.length===0);
-  return hasAll && noneUnassigned;
+  $('#phList').style.display=has?'block':'none';
+  $('#btnClearGroup').disabled=!has;
+  $('#btnAddPhase').disabled=!has;
+  $('#btnSave').disabled=!protocol||!isProtocolValid();
+  renderTabs();
+  renderPhases();
+  buildVM();
+  refreshRightDuration();
 }
 
 function renderTabs(){
-  const bar=$('#groupTabs'); bar.innerHTML='';
+  const bar=$('#groupTabs');bar.innerHTML='';
   groups.forEach(g=>{
-    const t=document.createElement('div'); t.className='gtab'+(g.id===activeGroupId?' active':'');
-    t.textContent=g.name; t.onclick=()=>{activeGroupId=g.id; renderTabs(); renderPhases();};
+    const t=document.createElement('div');
+    t.className='gtab'+(g.id===activeGroupId?' active':'');
+    t.textContent=g.name;
+    t.onclick=()=>{activeGroupId=g.id;renderTabs();renderPhases();};
     bar.appendChild(t);
   });
   const ag=groups.find(x=>x.id===activeGroupId);
-  const hours=ag?ag.phases.reduce((s,p)=>s+(parseFloat(p.duration)||0),0):0;
-  $('#groupDuration').textContent=ag?`${hours} hours`:'--';
+  const hours=ag?hoursOfGroup(ag):0;
+  $('#groupDuration').textContent=ag?`${hours.toFixed(2)} hours`:'--';
+}
+
+function fmtVal(type,v){ if(type==='Temperature'){return (Number(v)/10).toFixed(1);} return String(v); }
+function labelPhase(t){return t==='const'?'Constant':t==='ramp'?'Ramp':t==='sin'?'Sine':t==='cloud'?'Cloud':t}
+function summaryGrid(container, pairs){
+  const g=document.createElement('div');g.className='sum-grid';
+  pairs.forEach(([label,val])=>{
+    const l=document.createElement('div');l.className='l';l.textContent=label;
+    const v=document.createElement('div');v.className='v';v.textContent=val;
+    g.appendChild(l);g.appendChild(v);
+  });
+  container.appendChild(g);
+}
+function buildSummary(varType,p){
+  const wrap=document.createElement('div');
+  if(p.type==='const'){
+    summaryGrid(wrap, [["Value", fmtVal(varType,p.value)]]);
+  } else if(p.type==='ramp'){
+    summaryGrid(wrap, [["Start", fmtVal(varType,p.start)],["End", fmtVal(varType,p.end)]]);
+  } else if(p.type==='sin'){
+    summaryGrid(wrap,[["Min", fmtVal(varType,p.min)],["Max", fmtVal(varType,p.max)],["Period", p.period],["Phase Offset", p.phaseOffset]]);
+  } else if(p.type==='cloud'){
+    summaryGrid(wrap,[
+      ["Amplitude", fmtVal(varType,p.amplitude)],["Offset", fmtVal(varType,p.offset)],
+      ["Cloud Attenuation","0.50"],["Cloud Density", p.cloud_density+"%"],["Cloud Position", p.cloud_position+"%"],
+      ["Cloud Duration Mean", p.cloud_duration_mean],["Cloud Duration Var", p.cloud_duration_var],
+      ["Fluctuation Var", p.fluctuation_var],["Fluctuation Mean Ratio", p.fluctuation_mean_ratio]
+    ]);
+  }
+  return wrap;
 }
 
 function renderPhases(){
-  const c=$('#phaseScroller'); c.innerHTML='';
-  const g=groups.find(x=>x.id===activeGroupId); if(!g) return;
-  const ph=document.createElement('div'); ph.className='placeholder'; ph.style.background='#fff'; ph.style.border='1px dashed var(--b)'; ph.style.height='120px'; ph.textContent='No phases yet. Click "Add Phase".'; c.appendChild(ph);
-}
+  const list=$('#phList');list.querySelectorAll('.ph-row.data').forEach(n=>n.remove());
+  const g=groups.find(x=>x.id===activeGroupId);if(!g)return;g.phases=g.phases||[];
+  g.phases.forEach((p,i)=>{
+    const r=document.createElement('div');r.className='ph-row data'+((p.type==='sin'||p.type==='cloud')?' tall':'');r.draggable=true;r.dataset.idx=i;
+    r.addEventListener('dragstart',e=>{r.classList.add('dragging');e.dataTransfer.setData('text/plain',i);});
+    r.addEventListener('dragend',()=>r.classList.remove('dragging'));
+    r.addEventListener('dragover',e=>{e.preventDefault();});
+    r.addEventListener('drop',e=>{e.preventDefault();const from=parseInt(e.dataTransfer.getData('text/plain'));const to=i;reorderPhase(from,to);});
 
-function createDefaultGroups(){
-  groups=[]; unassigned={}; TAB_ORDER.forEach(t=> unassigned[t]=[]);
-  TAB_ORDER.forEach(type=>{
-    groups.push({id:crypto.randomUUID(), type, name:type, vars:INVENTORY[type].slice(), phases:[]});
+    const cIdx=document.createElement('div');cIdx.textContent=i+1;
+    const cDur=document.createElement('div');cDur.className='clickable';cDur.textContent=p.duration||'01:00:00';cDur.onclick=()=>{insertAfterIndex=i;openEditPhase(p);} 
+    const cType=document.createElement('div');cType.innerHTML=`<span class="pill">${labelPhase(p.type)}</span>`;cType.className='clickable';cType.onclick=()=>{insertAfterIndex=i;openEditPhase(p);} 
+    const cSum=document.createElement('div');cSum.className='clickable';cSum.onclick=()=>{insertAfterIndex=i;openEditPhase(p);} 
+    cSum.appendChild(buildSummary(g.type,p));
+
+    const cAct=document.createElement('div');cAct.className='ph-actions';
+    const addB=document.createElement('button');addB.className='btn small';addB.textContent='add below';addB.onclick=()=>{insertAfterIndex=i;openAddPhase();};
+    const del=document.createElement('button');del.className='btn small';del.textContent='remove';del.onclick=()=>{g.phases.splice(i,1);renderPhases();refreshRightDuration();};
+    cAct.appendChild(del);cAct.appendChild(addB);
+
+    r.appendChild(cIdx);r.appendChild(cDur);r.appendChild(cType);r.appendChild(cSum);r.appendChild(cAct);
+    list.appendChild(r);
   });
-  activeGroupId=groups[0].id;
+  refreshRightDuration();
 }
+function reorderPhase(from,to){const g=groups.find(x=>x.id===activeGroupId);if(!g)return;const item=g.phases.splice(from,1)[0];g.phases.splice(to,0,item);renderPhases();}
 
 // ===== Variable Manager =====
-let vmSelectedGroupId=null; // selected group (tab) in overlay
+function buildVM(){const tabs=$('#vgTabs'),list=$('#vgList');if(!tabs||!list)return;tabs.innerHTML='';groups.forEach(g=>{const b=document.createElement('div');b.className='vg-tab'+(g.id===vmSelectedGroupId?' active':'');b.textContent=g.name;b.onclick=()=>{vmSelectedGroupId=g.id;buildVM();};tabs.appendChild(b);});if(!vmSelectedGroupId&&groups.length)vmSelectedGroupId=groups[0].id;const g=groups.find(x=>x.id===vmSelectedGroupId);list.innerHTML='';if(g){const title=document.createElement('div');title.textContent=g.name;title.style.fontWeight='600';title.style.margin='6px 0';list.appendChild(title);if(g.vars.length===0){const empty=document.createElement('div');empty.style.textAlign='center';empty.style.color='#666';empty.style.padding='20px 0';empty.textContent='None assigned variables';list.appendChild(empty);}g.vars.forEach(v=>{const row=document.createElement('div');row.className='pill-row';const pill=document.createElement('span');pill.className='pill';pill.textContent=v;row.appendChild(pill);const rm=document.createElement('button');rm.className='btn small';rm.textContent='Remove';rm.onclick=()=>{removeVarFromGroup(g.id,v);};const mv=document.createElement('button');mv.className='btn small';mv.textContent='Move to';mv.onclick=()=>{chooseTargetGroup(g,v);};row.appendChild(rm);row.appendChild(mv);list.appendChild(row);});}updateVMFooter(g);} 
+function updateVMFooter(g){$('#vmGroupName').textContent='Actual group name:  '+(g?g.name:'-');$('#vmVarCount').textContent='Number of variables:  '+(g?g.vars.length:0);} 
+function removeVarFromGroup(groupId,varName){const g=groups.find(x=>x.id===groupId);if(!g)return;g.vars=g.vars.filter(n=>n!==varName);unassigned[g.type].push(varName);refreshUI();}
+function chooseTargetGroup(sourceGroup,varName){const candidates=groups.filter(g=>g.type===sourceGroup.type&&g.id!==sourceGroup.id);if(candidates.length===0){$('#dlgWarn').style.display='flex';return;}const box=$('#cgList');box.innerHTML='';candidates.forEach(g=>{const b=document.createElement('button');b.className='btn';b.textContent=g.name;b.style.minWidth='140px';b.style.margin='6px';b.onclick=()=>{moveVar(sourceGroup,g,varName);$('#dlgChooseGroup').style.display='none';};box.appendChild(b);});$('#dlgChooseGroup').style.display='flex';}
+function moveVar(from,to,varName){from.vars=from.vars.filter(n=>n!==varName);if(!to.vars.includes(varName))to.vars.push(varName);refreshUI();}
 
-function buildVM(){
-  const tabs=$('#vgTabs'); const list=$('#vgList'); if(!tabs||!list) return;
-  tabs.innerHTML='';
-  groups.forEach(g=>{
-    const b=document.createElement('div'); b.className='vg-tab'+(g.id===vmSelectedGroupId?' active':''); b.textContent=g.name;
-    b.onclick=()=>{vmSelectedGroupId=g.id; buildVM();};
-    tabs.appendChild(b);
-  });
-
-  if(!vmSelectedGroupId && groups.length) vmSelectedGroupId=groups[0].id;
-  const g=groups.find(x=>x.id===vmSelectedGroupId);
-
-  list.innerHTML='';
-  if(g){
-    const title=document.createElement('div'); title.textContent=g.name; title.style.fontWeight='600'; title.style.margin='6px 0'; list.appendChild(title);
-    if(g.vars.length===0){
-      const empty=document.createElement('div'); empty.style.textAlign='center'; empty.style.color='#666'; empty.style.padding='20px 0'; empty.textContent='None assigned variables'; list.appendChild(empty);
-    }
-    g.vars.forEach(v=>{
-      const row=document.createElement('div'); row.className='pill-row';
-      const pill=document.createElement('span'); pill.className='pill'; pill.textContent=v; row.appendChild(pill);
-      const rm=document.createElement('button'); rm.className='btn mini'; rm.textContent='Remove'; rm.onclick=()=>{ removeVarFromGroup(g.id, v); };
-      const mv=document.createElement('button'); mv.className='btn mini'; mv.textContent='Move to'; mv.onclick=()=>{ chooseTargetGroup(g, v); };
-      row.appendChild(rm); row.appendChild(mv); list.appendChild(row);
-    });
-  }
-  updateVMFooter(g);
-}
-
-function updateVMFooter(g){
-  $('#vmGroupName').textContent = 'Actual group name:  ' + (g? g.name: '-');
-  $('#vmVarCount').textContent = 'Number of variables:  ' + (g? g.vars.length: 0);
-}
-
-function removeVarFromGroup(groupId, varName){
-  const g = groups.find(x=>x.id===groupId); if(!g) return;
-  g.vars = g.vars.filter(n=>n!==varName);
-  unassigned[g.type].push(varName);
-  refreshUI();
-}
-
-function chooseTargetGroup(sourceGroup, varName){
-  const candidates = groups.filter(g=> g.type===sourceGroup.type && g.id!==sourceGroup.id);
-  if(candidates.length===0){ $('#dlgWarn').style.display='flex'; return; }
-  const box=$('#cgList'); box.innerHTML='';
-  candidates.forEach(g=>{
-    const b=document.createElement('button'); b.className='btn'; b.textContent=g.name; b.style.minWidth='140px'; b.style.margin='6px';
-    b.onclick=()=>{ moveVar(sourceGroup, g, varName); $('#dlgChooseGroup').style.display='none'; };
-    box.appendChild(b);
-  });
-  $('#dlgChooseGroup').style.display='flex';
-}
-function moveVar(from, to, varName){
-  from.vars = from.vars.filter(n=>n!==varName);
-  if(!to.vars.includes(varName)) to.vars.push(varName);
-  refreshUI();
-}
-
-// Right side actions (act on selected group)
-$('#btnCreateGroup').onclick=()=>{
-  const g=groups.find(x=>x.id===vmSelectedGroupId) || groups[0];
-  const sel=$('#ngType'); sel.innerHTML=''; TAB_ORDER.forEach(t=>{ const o=document.createElement('option'); o.value=t; o.textContent=t; sel.appendChild(o); });
-  $('#ngType').value = g? g.type : TAB_ORDER[0];
-  $('#ngName').value = (g? g.type : TAB_ORDER[0]) + ' 2';
-  $('#dlgNewGroup').style.display='flex';
-};
-$('#btnDeleteGroup').onclick=()=>{
-  const g = groups.find(x=>x.id===vmSelectedGroupId); if(!g) return;
-  g.vars.forEach(v=> unassigned[g.type].push(v));
-  groups = groups.filter(x=>x.id!==g.id);
-  vmSelectedGroupId = groups.find(x=>x.type===g.type)?.id || groups[0]?.id || null; refreshUI();
-};
-$('#btnRenameGroup').onclick=()=>{
-  const g = groups.find(x=>x.id===vmSelectedGroupId); if(!g) return;
-  const nn = prompt('Rename Group', g.name); if(!nn) return; g.name = nn.trim(); refreshUI();
-};
-$('#btnAddVariable').onclick=()=>{
-  const g = groups.find(x=>x.id===vmSelectedGroupId); if(!g) return;
-  const pool = unassigned[g.type];
-  if(pool.length===0){ alert('No unassigned variable for this type.'); return; }
-  $('#avGroupName').textContent = g.name;
-  buildAddVarList(g.type); $('#dlgAddVar').style.display='flex';
-};
-
-function buildAddVarList(type){
-  const list=$('#avList'); list.innerHTML='';
-  const items = unassigned[type].slice();
-  items.forEach(name=>{
-    const row=document.createElement('div'); row.style.margin='6px 0';
-    const cb=document.createElement('input'); cb.type='checkbox'; cb.className='chk'; cb.value=name; row.appendChild(cb);
-    const pill=document.createElement('span'); pill.className='pill'; pill.textContent=name + '  ('+type+')'; row.appendChild(pill);
-    list.appendChild(row);
-  });
-  $('#avAllCount').textContent = items.length; updateSelCount();
-}
-function updateSelCount(){
-  const n = $$('#avList input[type="checkbox"]:checked').length; $('#avSelCount').textContent = n;
-}
-$('#avList')?.addEventListener('change', updateSelCount);
-$('#avAll').onclick=()=>{ $$('#avList input[type="checkbox"]').forEach(cb=> cb.checked=true); updateSelCount(); };
-$('#avNone').onclick=()=>{ $$('#avList input[type="checkbox"]').forEach(cb=> cb.checked=false); updateSelCount(); };
+$('#btnCreateGroup').onclick=()=>{const g=groups.find(x=>x.id===vmSelectedGroupId)||groups[0];const sel=$('#ngType');sel.innerHTML='';TAB_ORDER.forEach(t=>{const o=document.createElement('option');o.value=t;o.textContent=t;sel.appendChild(o);});$('#ngType').value=g?g.type:TAB_ORDER[0];$('#ngName').value=(g?g.type:TAB_ORDER[0])+' 2';$('#dlgNewGroup').style.display='flex';};
+$('#btnDeleteGroup').onclick=()=>{const g=groups.find(x=>x.id===vmSelectedGroupId);if(!g)return;g.vars.forEach(v=>unassigned[g.type].push(v));groups=groups.filter(x=>x.id!==g.id);vmSelectedGroupId=groups.find(x=>x.type===g.type)?.id||groups[0]?.id||null;refreshUI();};
+$('#btnRenameGroup').onclick=()=>{const g=groups.find(x=>x.id===vmSelectedGroupId);if(!g)return;const nn=prompt('Rename Group',g.name);if(!nn)return;g.name=nn.trim();refreshUI();};
+$('#btnAddVariable').onclick=()=>{const g=groups.find(x=>x.id===vmSelectedGroupId);if(!g)return;const pool=unassigned[g.type];if(pool.length===0){alert('No unassigned variable for this type.');return;}$('#avGroupName').textContent=g.name;buildAddVarList(g.type);$('#dlgAddVar').style.display='flex';};
+function buildAddVarList(type){const list=$('#avList');list.innerHTML='';const items=unassigned[type].slice();items.forEach(name=>{const row=document.createElement('div');row.style.margin='6px 0';const cb=document.createElement('input');cb.type='checkbox';cb.value=name;cb.onchange=updateSelCount;row.appendChild(cb);const pill=document.createElement('span');pill.className='pill';pill.textContent=name+'  ('+type+')';row.appendChild(pill);list.appendChild(row);});$('#avAllCount').textContent=items.length;updateSelCount();}
+function updateSelCount(){const n=$$('#avList input[type="checkbox"]:checked').length;$('#avSelCount').textContent=n;}
+$('#avAll').onclick=()=>{$$('#avList input[type="checkbox"]').forEach(cb=>cb.checked=true);updateSelCount();};
+$('#avNone').onclick=()=>{$$('#avList input[type="checkbox"]').forEach(cb=>cb.checked=false);updateSelCount();};
 $('#avCancel').onclick=()=> $('#dlgAddVar').style.display='none';
-$('#avOK').onclick=()=>{
-  const g = groups.find(x=>x.id===vmSelectedGroupId); if(!g) return;
-  const chosen = $$('#avList input[type="checkbox"]:checked').map(cb=>cb.value);
-  if(chosen.length===0){ $('#dlgAddVar').style.display='none'; return; }
-  unassigned[g.type] = unassigned[g.type].filter(v=> !chosen.includes(v));
-  chosen.forEach(v=>{ if(!g.vars.includes(v)) g.vars.push(v); });
-  $('#dlgAddVar').style.display='none'; refreshUI();
-};
-
-// Sub dialog buttons
+$('#avOK').onclick=()=>{const g=groups.find(x=>x.id===vmSelectedGroupId);if(!g)return;const chosen=$$('#avList input[type="checkbox"]:checked').map(cb=>cb.value);if(chosen.length===0){$('#dlgAddVar').style.display='none';return;}unassigned[g.type]=unassigned[g.type].filter(v=>!chosen.includes(v));chosen.forEach(v=>{if(!g.vars.includes(v))g.vars.push(v);});$('#dlgAddVar').style.display='none';refreshUI();};
 $('#ngCancel').onclick=()=> $('#dlgNewGroup').style.display='none';
-$('#ngOK').onclick=()=>{
-  const type=$('#ngType').value; const name=($('#ngName').value||'').trim()||type;
-  const g={id:crypto.randomUUID(), type, name, vars:[], phases:[]};
-  groups.push(g); sortGroups(); vmSelectedGroupId=g.id; $('#dlgNewGroup').style.display='none';
-  // Offer Add Variable, but DO NOT discard here
-  const pool = unassigned[type];
-  if(pool && pool.length>0){
-    $('#avGroupName').textContent = g.name; buildAddVarList(type); $('#dlgAddVar').style.display='flex';
-  }
-  refreshUI();
-};
+$('#ngOK').onclick=()=>{const type=$('#ngType').value;const name=($('#ngName').value||'').trim()||type;const g={id:crypto.randomUUID(),type,name,vars:[],phases:[]};groups.push(g);sortGroups();vmSelectedGroupId=g.id;$('#dlgNewGroup').style.display='none';refreshUI();};
 $('#cgCancel').onclick=()=> $('#dlgChooseGroup').style.display='none';
 $('#warnOK').onclick=()=> $('#dlgWarn').style.display='none';
+$('#btnCloseGroups').onclick=()=>{groups=groups.filter(g=>g.vars&&g.vars.length>0);if(!groups.find(x=>x.id===vmSelectedGroupId))vmSelectedGroupId=groups[0]?.id||null;refreshUI();$('#dlgGroups').style.display='none';};
 
-// ================= BUTTONS =================
-$('#btnNew').addEventListener('click',()=>{
-  protocol={ description:"", repeat:2147483647, logic:"23:00:00", sections:[{parts:[]}] };
-  createDefaultGroups(); refreshUI();
-  $('#dlgGroups').style.display='flex'; vmSelectedGroupId=groups[0].id; buildVM();
-});
-$('#btnErase').addEventListener('click',()=>{ if(!confirm('Erase current protocol?')) return; protocol=null; groups=[]; activeGroupId=null; unassigned={}; refreshUI(); });
-$('#btnEraseTime').addEventListener('click',()=> $('#logic').value='- not set -');
-$('#btnSetInf').addEventListener('click',()=> $('#repeat').value='Infinitely times');
-$('#btnCloseGroups').onclick=()=>{
-  // Discard any empty groups ONLY when finishing the VM overlay
-  groups = groups.filter(g => Array.isArray(g.vars) && g.vars.length>0);
-  if (!groups.find(x=>x.id===vmSelectedGroupId)) vmSelectedGroupId = groups[0]?.id || null;
+// ===== Phases: Add/Edit/Remove =====
+function openAddPhase(){const g=groups.find(x=>x.id===activeGroupId);if(!g)return;const typeName=g.type;const sel=$('#phType');Array.from(sel.options).forEach(o=>{o.disabled=(typeName==='Hydroponics' && o.value!=='const');});sel.value=(typeName==='Hydroponics')?'const':'const';buildPhaseFields(typeName, sel.value);sel.onchange=()=> buildPhaseFields(typeName, sel.value);$('#dlgPhase').dataset.mode='add';$('#dlgPhase').style.display='flex';}
+function openEditPhase(ph){const g=groups.find(x=>x.id===activeGroupId);if(!g)return;const typeName=g.type;const sel=$('#phType');Array.from(sel.options).forEach(o=>{o.disabled=(typeName==='Hydroponics' && o.value!=='const');});sel.value=ph.type;buildPhaseFields(typeName, sel.value);
+  if(ph.type==='const'){ $('#phVal').value=fmtForEdit(typeName, ph.value); }
+  if(ph.type==='ramp'){ $('#phStart').value=fmtForEdit(typeName, ph.start); $('#phEnd').value=fmtForEdit(typeName, ph.end); }
+  if(ph.type==='sin'){ $('#phMin').value=fmtForEdit(typeName, ph.min); $('#phMax').value=fmtForEdit(typeName, ph.max); $('#phPeriod').value=ph.period; $('#phOffset').value=ph.phaseOffset; }
+  if(ph.type==='cloud'){ $('#phAmp').value=fmtForEdit(typeName, ph.amplitude); $('#phOff').value=fmtForEdit(typeName, ph.offset); $('#phDen').value=ph.cloud_density; $('#phPos').value=ph.cloud_position; $('#phCMean').value=ph.cloud_duration_mean; $('#phCVar').value=ph.cloud_duration_var; $('#phFR').value=ph.fluctuation_mean_ratio; $('#phFV').value=ph.fluctuation_var; $('#phDrop').value=ph.cloud_drop_coeff; }
+  $('#phDur').value=ph.duration;$('#dlgPhase').dataset.mode='edit'; $('#dlgPhase').dataset.editIndex=insertAfterIndex;$('#dlgPhase').style.display='flex';
+}
+function fmtForEdit(varType,val){ if(varType==='Temperature'){ return (Number(val)/10).toFixed(1); } return String(val);}
+
+function buildPhaseFields(varType,phType){
+  const wrap=$('#phFields');wrap.innerHTML='';
+  const range=RANGES[varType];
+  const hint=(text)=>`<div style="grid-column:1/-1;color:#566;font-size:12px;margin-top:2px">${text}</div>`;
+  const f=(label,id,value,placeholder='')=>`<label for="${id}">${label}:</label><input id="${id}" class="input" value="${value}" placeholder="${placeholder}">`;
+  const d=DEF[phType][varType];
+  if(phType==='const'){
+    wrap.innerHTML=`<div class="grid2">${f('Value', 'phVal', d.value)}${f('Duration', 'phDur', d.duration, 'HH:MM:SS')}</div>` + hint(`Range ${range.min}–${range.max}${varType==='Temperature'?' (allow 0.1 steps; stored ×10)':''}`);
+  }else if(phType==='ramp'){
+    wrap.innerHTML=`<div class="grid2">${f('Start', 'phStart', d.start)}${f('End', 'phEnd', d.end)}${f('Duration', 'phDur', d.duration, 'HH:MM:SS')}</div>` + hint(`Range ${range.min}–${range.max}${varType==='Temperature'?' (allow 0.1 steps; stored ×10)':''}`);
+  }else if(phType==='sin'){
+    wrap.innerHTML=`<div class="grid2">${f('Min', 'phMin', d.min)}${f('Max', 'phMax', d.max)}${f('Period', 'phPeriod', d.period, 'HH:MM:SS')}${f('Phase Offset', 'phOffset', d.phaseOffset, 'HH:MM:SS')}${f('Duration', 'phDur', d.duration, 'HH:MM:SS')}</div>` + hint(`Min/Max in ${range.min}–${range.max}${varType==='Temperature'?' (allow 0.1 steps; stored ×10)':''}`);
+  }else if(phType==='cloud'){
+    wrap.innerHTML=`<div class="grid2">${f('Amplitude', 'phAmp', d.amplitude)}${f('Offset', 'phOff', d.offset)}${f('Cloud Density', 'phDen', d.cloud_density)}${f('Cloud Position', 'phPos', d.cloud_position)}${f('Cloud Duration Mean (min)', 'phCMean', d.cloud_duration_mean)}${f('Cloud Duration Var', 'phCVar', d.cloud_duration_var)}${f('Fluctuation Mean Ratio', 'phFR', d.fluctuation_mean_ratio)}${f('Fluctuation Var', 'phFV', d.fluctuation_var)}${f('Cloud Drop Coeff', 'phDrop', d.cloud_drop_coeff)}${f('Duration', 'phDur', d.duration, 'HH:MM:SS')}</div>` + hint(`Density/Position: integers 0–100. Amplitude/Offset within ${range.min}–${range.max}${varType==='Temperature'?' (allow 0.1 steps; stored ×10)':''}`);
+  }
+}
+
+function readPhaseFromForm(varType){
+  const t=$('#phType').value;const rng=RANGES[varType];
+  const asNumber=(raw)=>{const n=Number(raw);return Number.isFinite(n)?n:NaN;};
+  const clampCheck=(raw,min,max,{requireInt=true}={})=>{
+    const n=asNumber(raw);
+    if(!Number.isFinite(n)) return {ok:false,msg:'Not a number'};
+    if(requireInt && !Number.isInteger(n)) return {ok:false,msg:'Must be an integer'};
+    if(n<min||n>max) return {ok:false,msg:`Out of range (${min}-${max})`};
+    return {ok:true,val:n};
+  };
+  const dur=$('#phDur').value||'01:00:00';
+  if(!isHHMMSS(dur)) { alert('Duration must be HH:MM:SS (00–23:59:59).'); return null; }
+
+  const tempDecimalAllowed=(varType==='Temperature');
+
+  if(t==='const'){
+    let res=clampCheck($('#phVal').value,rng.min,rng.max,{requireInt:!tempDecimalAllowed});
+    if(!res.ok){ alert('Value: '+res.msg); return null; }
+    let val=res.val; if(tempDecimalAllowed&&rng.scale) val=Math.round(val*rng.scale); else if(rng.scale) val*=rng.scale;
+    return {type:'const',value:val,duration:dur};
+  }else if(t==='ramp'){
+    let sC=clampCheck($('#phStart').value,rng.min,rng.max,{requireInt:!tempDecimalAllowed}); if(!sC.ok){alert('Start: '+sC.msg);return null;}
+    let eC=clampCheck($('#phEnd').value,rng.min,rng.max,{requireInt:!tempDecimalAllowed}); if(!eC.ok){alert('End: '+eC.msg);return null;}
+    let s=sC.val,e=eC.val; if(tempDecimalAllowed&&rng.scale){s=Math.round(s*rng.scale);e=Math.round(e*rng.scale);} else if(rng.scale){s*=rng.scale;e*=rng.scale;}
+    return {type:'ramp',start:s,end:e,duration:dur};
+  }else if(t==='sin'){
+    let mnC=clampCheck($('#phMin').value,rng.min,rng.max,{requireInt:!tempDecimalAllowed}); if(!mnC.ok){alert('Min: '+mnC.msg);return null;}
+    let mxC=clampCheck($('#phMax').value,rng.min,rng.max,{requireInt:!tempDecimalAllowed}); if(!mxC.ok){alert('Max: '+mxC.msg);return null;}
+    const period=$('#phPeriod').value||'01:00:00'; if(!isHHMMSS(period)){alert('Period must be HH:MM:SS');return null;}
+    const offset=$('#phOffset').value||'00:00:00'; if(!isHHMMSS(offset)){alert('Phase Offset must be HH:MM:SS');return null;}
+    let mn=mnC.val,mx=mxC.val; if(tempDecimalAllowed&&rng.scale){mn=Math.round(mn*rng.scale);mx=Math.round(mx*rng.scale);} else if(rng.scale){mn*=rng.scale;mx*=rng.scale;}
+    return {type:'sin',min:mn,max:mx,period:period,phaseOffset:offset,duration:dur};
+  }else if(t==='cloud'){
+    const den=parseInt($('#phDen').value,10); if(!intInRange(den,0,100)){alert('Cloud density must be an integer 0-100');return null;}
+    const pos=parseInt($('#phPos').value,10); if(!intInRange(pos,0,100)){alert('Cloud position must be an integer 0-100');return null;}
+    let ampC=clampCheck($('#phAmp').value,rng.min,rng.max,{requireInt:!tempDecimalAllowed}); if(!ampC.ok){alert('Amplitude: '+ampC.msg);return null;}
+    let offC=clampCheck($('#phOff').value,rng.min,rng.max,{requireInt:!tempDecimalAllowed}); if(!offC.ok){alert('Offset: '+offC.msg);return null;}
+    let amp=ampC.val, off=offC.val; if(tempDecimalAllowed&&rng.scale){amp=Math.round(amp*rng.scale);off=Math.round(off*rng.scale);} else if(rng.scale){amp*=rng.scale;off*=rng.scale;}
+    const cMean=Number($('#phCMean').value); if(!Number.isFinite(cMean)){alert('Cloud duration mean must be a number');return null;}
+    const cVar=Number($('#phCVar').value); if(!Number.isFinite(cVar)){alert('Cloud duration var must be a number');return null;}
+    const fmr=Number($('#phFR').value); if(!Number.isFinite(fmr)){alert('Fluctuation mean ratio must be a number');return null;}
+    const fv=Number($('#phFV').value); if(!Number.isFinite(fv)){alert('Fluctuation var must be a number');return null;}
+    const drop=Number($('#phDrop').value); if(!Number.isFinite(drop)){alert('Cloud drop coeff must be a number');return null;}
+    return {type:'cloud',amplitude:amp,offset:off,cloud_density:den,cloud_position:pos,cloud_duration_mean:cMean,cloud_duration_var:cVar,fluctuation_mean_ratio:fmr,fluctuation_var:fv,cloud_drop_coeff:drop,duration:dur};
+  }
+  return null;
+}
+
+$('#btnAddPhase').onclick=()=>{insertAfterIndex=null;openAddPhase();};
+$('#phCancel').onclick=()=> $('#dlgPhase').style.display='none';
+$('#phOK').onclick=()=>{const g=groups.find(x=>x.id===activeGroupId);if(!g)return;const varType=g.type;const ph=readPhaseFromForm(varType); if(!ph) return; if($('#dlgPhase').dataset.mode==='edit'){ const idx=parseInt($('#dlgPhase').dataset.editIndex,10); g.phases.splice(idx,1,ph); } else { if(insertAfterIndex==null){g.phases.push(ph);}else{g.phases.splice(insertAfterIndex+1,0,ph);} } $('#dlgPhase').style.display='none'; renderPhases(); refreshUI(); };
+
+// ===== Export JSON & FYT =====
+function displayVarToMachine(type, display){return MACHINE_VAR[type][display]||display.replace(/\s+/g,'');}
+function buildParts(){const parts=[];groups.forEach(g=>{const tu=TYPE_UNIT[g.type];const machineVars=(g.vars||[]).map(v=>displayVarToMachine(g.type,v));parts.push({"group-name":g.name,type:tu.type,"union-tag":"fytotron",unit:tu.unit,vars:machineVars,phases:g.phases||[]});});return parts;}
+function buildProtocolJson(){
+  const desc=$('#desc').value||"";
+  let logicVal=$('#logic').value.trim();
+  if(logicVal==='- not set -') logicVal='';
+  if(logicVal!=='' && !isHHMMSS(logicVal)){alert('Logic start time must be HH:MM:SS or left blank'); return null;}
+  const repRaw=$('#repeat').value.trim();
+  let repeat=2147483647;
+  if(repRaw && repRaw!=='Infinitely times'){const n=parseInt(repRaw,10);if(!Number.isNaN(n)&&n>0)repeat=n;}
+  return {description:desc,repeat:repeat,logic:logicVal,sections:[{parts:buildParts()}]};
+}
+
+// CRLF JSON like python helper (no trailing newline)
+function formatJsonCRLF(obj){
+  const json=JSON.stringify(obj,null,2).split("\n");
+  for(let i=0;i<json.length-1;i++) json[i]=json[i]+"\r\n";
+  return json.join("");
+}
+
+function encodeUTF8(str){return new TextEncoder().encode(str);} 
+function downloadBytes(name, bytes){
+  const blob=new Blob([bytes],{type:'application/octet-stream'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();URL.revokeObjectURL(a.href);
+}
+function downloadJSONFile(name, text){
+  const a=document.createElement('a');
+  a.href='data:application/json;charset=utf-8,'+encodeURIComponent(text);
+  a.download=name; a.click();
+}
+
+/*
+  FYT HEADER NOTE (positions 0..23, last two bytes dynamic):
+  Static bytes for "Fytotron Protocol" + version:
+    11 46 79 74 6F 74 72 6F 6E 20 50 72 6F 74 6F 63 6F 6C 01 00 00 00 -- --
+  Bytes [22],[23] are a 16-bit little-endian code derived from *JSON length only*
+  (UTF‑8 bytes of the CRLF‑formatted JSON with description field set to "",
+   NO header and NO description bytes). Let L = length of that JSON in bytes.
+
+  Observed mapping (from machine files) matches:
+    T = L + 103
+    q = floor(T / 128)
+    hi = q - 1
+    lo = T - 128*hi           // equivalently: lo = (T % 128) + 128
+  The stored two header bytes are (lo, hi) in little‑endian order.
+
+  Special remark: Any bytes appended after the JSON (description text or 0x00
+  placeholder when empty) DO NOT change these two header bytes.
+*/
+const FIXED_HEADER_BASE = [
+  0x11,0x46,0x79,0x74,0x6f,0x74,0x72,0x6f,0x6e,0x20,0x50,0x72,0x6f,0x74,0x6f,0x63,0x6f,0x6c,
+  0x01,0x00,0x00,0x00, /* [22]=lo , [23]=hi will be filled dynamically */
+];
+
+// compute (lo,hi) per formula from JSON length
+function computeHeaderBytesFromLen(L){
+  const T = L + 103;
+  const q = Math.floor(T / 128);
+  const hi = q - 1;
+  const lo = T - 128*hi; // same as (T % 128) + 128
+  return [lo & 0xFF, hi & 0xFF];
+}
+
+function buildFytBytes(dataObj){
+  // IMPORTANT: description is placed AFTER the JSON payload.
+  // Inside the JSON itself, we must put description: "" (empty)
+  const jsonPayload = { description:"", repeat:dataObj.repeat, logic:dataObj.logic, sections:dataObj.sections };
+  const jsonCRLF = formatJsonCRLF(jsonPayload);
+  const jsonBytes = encodeUTF8(jsonCRLF);
+
+  // dynamic two bytes from *jsonBytes.length*
+  const [lo,hi] = computeHeaderBytesFromLen(jsonBytes.length);
+
+  // assemble 24-byte header
+  const header = new Uint8Array(24);
+  header.set(FIXED_HEADER_BASE,0);
+  header[22] = lo;
+  header[23] = hi;
+
+  // description bytes (0x00 if empty, raw UTF‑8 otherwise)
+  const desc = dataObj.description || "";
+  const descBytes = desc.length ? encodeUTF8(desc) : new Uint8Array([0x00]);
+
+  const out = new Uint8Array(header.length + jsonBytes.length + descBytes.length);
+  out.set(header,0);
+  out.set(jsonBytes,header.length);
+  out.set(descBytes,header.length+jsonBytes.length);
+  return out;
+}
+
+function saveBoth(){
+  if(!protocol){alert('Nothing to save.');return;}
+  if(!isProtocolValid()){alert('All variables must be assigned and each type must have a group before saving.');return;}
+  const data=buildProtocolJson(); if(!data) return;
+
+  // Save JSON (human-readable with description included)
+  const jsonText = JSON.stringify(data,null,2);
+  downloadJSONFile('protocol.json', jsonText);
+
+  // Save FYT (binary with dynamic header + JSON(with empty description) + description bytes)
+  const fytBytes = buildFytBytes(data);
+  downloadBytes('protocol.fyt', fytBytes);
+}
+
+// ===== Buttons =====
+$('#btnNew').onclick=()=>{protocol={description:"",repeat:2147483647,logic:"",sections:[{parts:[]}]};unassigned={};TAB_ORDER.forEach(t=>unassigned[t]=[]);createDefaultGroups();refreshUI();$('#dlgGroups').style.display='flex';};
+$('#btnErase').onclick=()=>{if(!confirm('Erase current protocol?'))return;protocol=null;groups=[];activeGroupId=null;unassigned={};refreshUI();};
+$('#btnEraseTime').onclick=()=> $('#logic').value='- not set -';
+$('#btnSetInf').onclick=()=> $('#repeat').value='Infinitely times';
+$('#btnEditGroups').onclick=()=>{if(!protocol){alert('Create a NEW protocol first.');return;}$('#dlgGroups').style.display='flex';buildVM();};
+$('#btnSave').onclick=()=>{ saveBoth(); };
+
+$('#btnClearGroup').onclick=()=>{
+  const g=groups.find(x=>x.id===activeGroupId);
+  if(!g) return;
+  if(!g.phases || g.phases.length===0) return;
+  if(!confirm(`Clear all ${g.phases.length} phase(s) in group "${g.name}"?`)) return;
+  g.phases = [];
+  renderPhases();
   refreshUI();
-  $('#dlgGroups').style.display='none';
 };
-$('#btnEditGroups').onclick=()=>{ if(!protocol){ alert('Create a NEW protocol first.'); return; } $('#dlgGroups').style.display='flex'; buildVM(); };
 
-// initial paint
-refreshUI();
+function createDefaultGroups(){
+  groups=[];
+  TAB_ORDER.forEach(type=>{
+    groups.push({id:crypto.randomUUID(),type,name:type,vars:INVENTORY[type].slice(),phases:[]});
+  });
+  activeGroupId=groups[0].id;
+  vmSelectedGroupId=groups[0].id;
+}
+
+// ===== Build fields for phases (re-used above) =====
+function buildAddPhase(){/* not used directly */}
+
 </script>
 </body>
 </html>
