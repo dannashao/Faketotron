@@ -1,5 +1,5 @@
 # Faketotron
-a mock Fytotron Client protocol editor
+a mock Fytotron Client protocol editor and viewer.
 
 ## Disclaimer
 
@@ -14,9 +14,7 @@ This software is designed to generate `.fyt` files that are compatible with PSI 
 but it does **not** connect to or control any real instruments and must **not** be used in 
 any production, clinical, agricultural, or commercial environment.
 
----
-
-## No Endorsement
+### No Endorsement
 
 Neither the name of the author(s), the university, nor the name "Photon Systems Instruments" 
 may be used to endorse or promote products derived from this software without specific prior written permission.  
