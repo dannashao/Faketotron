@@ -19,3 +19,8 @@ any production, clinical, agricultural, or commercial environment.
 Neither the name of the author(s), the university, nor the name "Photon Systems Instruments" 
 may be used to endorse or promote products derived from this software without specific prior written permission.  
 Any resemblance to the original *Fytotron Client* software is for educational simulation purposes only.
+
+## License
+This project is licensed under a custom **BSD-3-Clause Academic Use License**.  
+This is **not** the standard BSD 3-Clause license — it includes a non-commercial restriction.  
+See [LICENSE](LICENSE) for details.
