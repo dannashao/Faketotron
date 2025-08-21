@@ -412,24 +412,81 @@ const $=s=>document.querySelector(s), $$=s=>Array.from(document.querySelectorAll
 /* ============================================================
    UTILS / VALIDATION
    ============================================================ */
+
 function isHHMMSSClock(v){
-  const m=/(\d{2}):(\d{2}):(\d{2})$/.exec(v||'');
+  const m=/^(\d{2}):(\d{2}):(\d{2})$/.exec(v||'');
   if(!m) return false;
   const H=+m[1], M=+m[2], S=+m[3];
   return H>=0 && H<24 && M>=0 && M<60 && S>=0 && S<60;
 }
-function isHHMMSS(v) {
-  const m = /^(\d+):(\d{2}):(\d{2})$/.exec(v || '');
-  if (!m) return false;
-  const H = +m[1], M = +m[2], S = +m[3];
-  return H >= 0 && M >= 0 && M < 60 && S >= 0 && S < 60;
+// Accept either D.HH:MM:SS (HH=00-23) or H+:MM:SS (unbounded hours) for user/file inputs
+function isDHHMMSS(v){
+  const m=/^(\d+)\.(\d{2}):(\d{2}):(\d{2})$/.exec(v||'');
+  if(!m) return false;
+  const D=+m[1], H=+m[2], M=+m[3], S=+m[4];
+  return D>=0 && H>=0 && H<24 && M>=0 && M<60 && S>=0 && S<60;
 }
-function intInRange(n, min, max){return Number.isInteger(n) && n>=min && n<=max;}
-function sortGroups(){groups.sort((a,b)=>{const ai=TAB_ORDER.indexOf(a.type),bi=TAB_ORDER.indexOf(b.type);if(ai!==bi)return ai-bi;return a.name.localeCompare(b.name);});}
-function isProtocolValid(){const hasAll=TAB_ORDER.every(t=>groups.some(g=>g.type===t));const noneUnassigned=Object.values(unassigned).every(a=>a.length===0);return hasAll&&noneUnassigned;}
+function isHPlus(v){
+  const m=/^(\d+):(\d{2}):(\d{2})$/.exec(v||'');
+  if(!m) return false;
+  const H=+m[1], M=+m[2], S=+m[3];
+  return H>=0 && M>=0 && M<60 && S>=0 && S<60;
+}
+function isDuration(v){ return isDHHMMSS(v) || isHPlus(v); }
+// Parse either format to seconds
+function durationToSeconds(s){
+  if(isDHHMMSS(s)){
+    const m=/^(\d+)\.(\d{2}):(\d{2}):(\d{2})$/.exec(s);
+    const D=+m[1], H=+m[2], M=+m[3], S=+m[4];
+    return D*86400 + H*3600 + M*60 + S;
+  }
+  if(isHPlus(s)){
+    const m=/^(\d+):(\d{2}):(\d{2})$/.exec(s);
+    const H=+m[1], M=+m[2], S=+m[3];
+    return H*3600 + M*60 + S;
+  }
+  return NaN;
+}
+function durationToHours(s){ const sec=durationToSeconds(s); return Number.isFinite(sec)? sec/3600 : 0; }
+// Format seconds to display rule: <24h -> HH:MM:SS; >=24h -> D.HH:MM:SS
+function secondsToDisplayDuration(sec){
+  sec = Math.max(0, Math.floor(sec||0));
+  const SS = (n)=> String(n).padStart(2,'0');
+  const days = Math.floor(sec/86400);
+  let rem = sec % 86400;
+  const h = Math.floor(rem/3600);
+  rem %= 3600;
+  const m = Math.floor(rem/60);
+  const s = rem % 60;
+  if(days>0){
+    return `${days}.${SS(h)}:${SS(m)}:${SS(s)}`;
+  }else{
+    return `${SS(h)}:${SS(m)}:${SS(s)}`;
+  }
+}
+// Normalize an input duration string into the display rule, or return null if invalid
+function normalizeDurationStr(str){
+  const sec = durationToSeconds(str);
+  if(!Number.isFinite(sec)) return null;
+  return secondsToDisplayDuration(sec);
+}
 
-function hhmmssToSeconds(s){if(!isHHMMSS(s)) return 0;const [H,M,S]=s.split(':').map(Number);return H*3600+M*60+S;}
-function hhmmssToHours(s){return hhmmssToSeconds(s)/3600;}
+
+function intInRange(n, min, max){return Number.isInteger(n) && n>=min && n<=max;}
+// Keep group ordering stable by type then name
+function sortGroups(){
+  groups.sort((a,b)=>{
+    const ai = TAB_ORDER.indexOf(a.type), bi = TAB_ORDER.indexOf(b.type);
+    if(ai!==bi) return ai-bi;
+    return a.name.localeCompare(b.name);
+  });
+}
+// Protocol is valid if each type is present and no unassigned variables remain
+function isProtocolValid(){
+  const hasAll = TAB_ORDER.every(t=>groups.some(g=>g.type===t));
+  const noneUnassigned = Object.values(unassigned).every(a=>a.length===0);
+  return hasAll && noneUnassigned;
+}
 function fmtVal(type,v){ if(type==='Temperature'){return (Number(v)/10).toFixed(1);} return String(v); }
 function labelPhase(t){return t==='const'?'Constant':t==='ramp'?'Ramp':t==='sin'?'Sine':t==='cloud'?'Cloud':t}
 
@@ -465,11 +522,11 @@ function renderTabs(){
 }
 function updateGroupDurationField(){
   const ag=groups.find(x=>x.id===activeGroupId);
-  const hours=ag?ag.phases.reduce((s,p)=>s+hhmmssToHours(p.duration),0):0;
+  const hours=ag?ag.phases.reduce((s,p)=>s+durationToHours(p.duration),0):0;
   $('#groupDuration').textContent=ag?`${hours.toFixed(2)} hours`:'--';
 }
 function updateOverallDuration(){
-  const longestHours=Math.max(0, ...groups.map(g=>g.phases.reduce((s,p)=>s+hhmmssToHours(p.duration),0)));
+  const longestHours=Math.max(0, ...groups.map(g=>g.phases.reduce((s,p)=>s+durationToHours(p.duration),0)));
   $('#duration').value = `${longestHours.toFixed(2)} hours`;
 }
 
@@ -508,7 +565,7 @@ function renderPhases(){
     r.addEventListener('drop',e=>{e.preventDefault();const from=parseInt(e.dataTransfer.getData('text/plain'));const to=i;reorderPhase(from,to);});
 
     const cIdx=document.createElement('div');cIdx.textContent=i+1;
-    const cDur=document.createElement('div');cDur.className='clickable';cDur.textContent=p.duration||'01:00:00';cDur.onclick=()=>{insertAfterIndex=i;openEditPhase(p);} 
+    const cDur=document.createElement('div');cDur.className='clickable';cDur.textContent=normalizeDurationStr(p.duration||'01:00:00');cDur.onclick=()=>{insertAfterIndex=i;openEditPhase(p);} 
     const cType=document.createElement('div');cType.innerHTML=`<span class="pill">${labelPhase(p.type)}</span>`;cType.className='clickable';cType.onclick=()=>{insertAfterIndex=i;openEditPhase(p);} 
     const cSum=document.createElement('div');cSum.className='clickable';cSum.onclick=()=>{insertAfterIndex=i;openEditPhase(p);} 
     cSum.appendChild(buildSummary(g.type,p));
@@ -573,13 +630,13 @@ function buildPhaseFields(varType,phType){
   const f=(label,id,value,placeholder='')=>`<label for="${id}">${label}:</label><input id="${id}" class="input" value="${value}" placeholder="${placeholder}">`;
   const d=DEF[phType][varType];
   if(phType==='const'){
-    wrap.innerHTML=`<div class="grid2">${f('Value', 'phVal', d.value)}${f('Duration', 'phDur', d.duration, 'HH:MM:SS')}</div>` + hint(`Range ${range.min}–${range.max}${varType==='Temperature'?' (allow 0.1 steps; stored ×10)':''}`);
+    wrap.innerHTML=`<div class="grid2">${f('Value', 'phVal', d.value)}${f('Duration', 'phDur', d.duration, 'HH:MM:SS (or D.HH:MM:SS for >24h)')}</div>` + hint(`Range ${range.min}–${range.max}${varType==='Temperature'?' (allow 0.1 steps; stored ×10)':''}`);
   }else if(phType==='ramp'){
-    wrap.innerHTML=`<div class="grid2">${f('Start', 'phStart', d.start)}${f('End', 'phEnd', d.end)}${f('Duration', 'phDur', d.duration, 'HH:MM:SS')}${f('Step (fixed)', 'phStep', RAMP_STEP, 'HH:MM:SS')}</div>` + hint(`Range ${range.min}–${range.max}${varType==='Temperature'?' (allow 0.1 steps; stored ×10)':''}`);
+    wrap.innerHTML=`<div class="grid2">${f('Start', 'phStart', d.start)}${f('End', 'phEnd', d.end)}${f('Duration', 'phDur', d.duration, 'HH:MM:SS (or D.HH:MM:SS for >24h)')}${f('Step (fixed)', 'phStep', RAMP_STEP, 'HH:MM:SS (or D.HH:MM:SS for >24h)')}</div>` + hint(`Range ${range.min}–${range.max}${varType==='Temperature'?' (allow 0.1 steps; stored ×10)':''}`);
   }else if(phType==='sin'){
-    wrap.innerHTML=`<div class="grid2">${f('Duration', 'phDur', d.duration, 'HH:MM:SS')}${f('Step (fixed)', 'phStep', RAMP_STEP, 'HH:MM:SS')}${f('Min', 'phMin', d.min)}${f('Max', 'phMax', d.max)}${f('Period', 'phPeriod', d.period, 'HH:MM:SS')}${f('Phase Offset', 'phOffset', d.phaseOffset, 'HH:MM:SS')}</div>` + hint(`Min/Max in ${range.min}–${range.max}${varType==='Temperature'?' (allow 0.1 steps; stored ×10)':''}`);
+    wrap.innerHTML=`<div class="grid2">${f('Duration', 'phDur', d.duration, 'HH:MM:SS (or D.HH:MM:SS for >24h)')}${f('Step (fixed)', 'phStep', RAMP_STEP, 'HH:MM:SS (or D.HH:MM:SS for >24h)')}${f('Min', 'phMin', d.min)}${f('Max', 'phMax', d.max)}${f('Period', 'phPeriod', d.period, 'HH:MM:SS (or D.HH:MM:SS for >24h)')}${f('Phase Offset', 'phOffset', d.phaseOffset, 'HH:MM:SS (or D.HH:MM:SS for >24h)')}</div>` + hint(`Min/Max in ${range.min}–${range.max}${varType==='Temperature'?' (allow 0.1 steps; stored ×10)':''}`);
   }else if(phType==='cloud'){
-    wrap.innerHTML=`<div class="grid2">${f('Duration', 'phDur', d.duration, 'HH:MM:SS')}${f('Step (fixed)', 'phStep', RAMP_STEP, 'HH:MM:SS')}${f('Amplitude', 'phAmp', d.amplitude)}${f('Offset', 'phOff', d.offset)}${f('Cloud Density', 'phDen', d.cloud_density)}${f('Cloud Position', 'phPos', d.cloud_position)}${f('Cloud Duration Mean (min)', 'phCMean', d.cloud_duration_mean)}${f('Cloud Duration Var', 'phCVar', d.cloud_duration_var)}${f('Fluctuation Mean Ratio', 'phFR', d.fluctuation_mean_ratio)}${f('Fluctuation Var', 'phFV', d.fluctuation_var)}${f('Cloud Attenuation', 'phDrop', (typeof d.cloud_drop_coeff==='number'? d.cloud_drop_coeff.toFixed(2): d.cloud_drop_coeff))}</div>` + hint(`Density/Position: integers 0–100. Amplitude/Offset within ${effRange.min}–${effRange.max}${varType==='Temperature'?' (allow 0.1 steps; stored ×10)':''}`);
+    wrap.innerHTML=`<div class="grid2">${f('Duration', 'phDur', d.duration, 'HH:MM:SS (or D.HH:MM:SS for >24h)')}${f('Step (fixed)', 'phStep', RAMP_STEP, 'HH:MM:SS (or D.HH:MM:SS for >24h)')}${f('Amplitude', 'phAmp', d.amplitude)}${f('Offset', 'phOff', d.offset)}${f('Cloud Density', 'phDen', d.cloud_density)}${f('Cloud Position', 'phPos', d.cloud_position)}${f('Cloud Duration Mean (min)', 'phCMean', d.cloud_duration_mean)}${f('Cloud Duration Var', 'phCVar', d.cloud_duration_var)}${f('Fluctuation Mean Ratio', 'phFR', d.fluctuation_mean_ratio)}${f('Fluctuation Var', 'phFV', d.fluctuation_var)}${f('Cloud Attenuation', 'phDrop', (typeof d.cloud_drop_coeff==='number'? d.cloud_drop_coeff.toFixed(2): d.cloud_drop_coeff))}</div>` + hint(`Density/Position: integers 0–100. Amplitude/Offset within ${effRange.min}–${effRange.max}${varType==='Temperature'?' (allow 0.1 steps; stored ×10)':''}`);
   }
   // lock step & cloud drop fields (visible but uneditable)
   setTimeout(()=>{const st=$('#phStep'); if(st){ st.readOnly=true; st.classList.add('ro'); }},0);}
@@ -599,10 +656,10 @@ function readPhaseFromForm(varType){
     if(n<min||n>max) return {ok:false,msg:`Out of range (${min}-${max})`};
     return {ok:true,val:n};
   };
-  const dur=$('#phDur').value||'01:00:00';
-  if(!isHHMMSS(dur)) { alert('Duration must be as Hours:MM:SS (e.g., 5:07:09 or 120:59:59)'); return null; }
+  const durRaw=$('#phDur').value||'01:00:00';
+  const dur = normalizeDurationStr(durRaw);
+  if(!dur){ alert('Duration must be HH:MM:SS or D.HH:MM:SS (e.g., 05:07:09 or 1.05:07:09)'); return null; }
 
-  const tempDecimalAllowed=(varType==='Temperature');
 
   if(t==='const'){
     let res=clampCheck($('#phVal').value,rng.min,rng.max,{requireInt:!tempDecimalAllowed});
@@ -618,8 +675,8 @@ function readPhaseFromForm(varType){
   }else if(t==='sin'){
     let mnC=clampCheck($('#phMin').value,rng.min,rng.max,{requireInt:!tempDecimalAllowed}); if(!mnC.ok){alert('Min: '+mnC.msg);return null;}
     let mxC=clampCheck($('#phMax').value,rng.min,rng.max,{requireInt:!tempDecimalAllowed}); if(!mxC.ok){alert('Max: '+mxC.msg);return null;}
-    const period=$('#phPeriod').value||'01:00:00'; if(!isHHMMSS(period)){alert('Period must be as Hours:MM:SS (e.g., 5:07:09 or 120:59:59)');return null;}
-    const offset=$('#phOffset').value||'00:00:00'; if(!isHHMMSS(offset)){alert('Phase Offset must be as Hours:MM:SS (e.g., 5:07:09 or 120:59:59)');return null;}
+    const periodRaw=$('#phPeriod').value||'01:00:00'; const period=normalizeDurationStr(periodRaw); if(!period){alert('Period must be HH:MM:SS or D.HH:MM:SS');return null;}
+    const offsetRaw=$('#phOffset').value||'00:00:00'; const offset=normalizeDurationStr(offsetRaw); if(!offset){alert('Phase Offset must be HH:MM:SS or D.HH:MM:SS');return null;}
     let mn=mnC.val,mx=mxC.val; if(tempDecimalAllowed&&rng.scale){mn=Math.round(mn*rng.scale);mx=Math.round(mx*rng.scale);} else if(rng.scale){mn*=rng.scale;mx*=rng.scale;}
     const step=(($('#phStep')?.value)||RAMP_STEP);
     // Order will be enforced in buildParts
@@ -701,11 +758,11 @@ function buildParts(){const parts=[];groups.forEach(g=>{const tu=TYPE_UNIT[g.typ
     if(!p||!p.type) return p;
     if(p.type==='ramp'){
       const {start,end,duration,step}=p;
-      return {type:'ramp',duration:duration||'01:00:00',step:step||RAMP_STEP,start:start,end:end};
+      return {type:'ramp',duration:normalizeDurationStr(duration||'01:00:00'),step:normalizeDurationStr(step||RAMP_STEP),start:start,end:end};
     } else if(p.type==='cloud' || p.type==='clouds'){
       // Force type 'clouds' and key order, fixed step and drop coeff
-      const duration = p.duration || '01:00:00';
-      const step = p.step || RAMP_STEP;
+      const duration = normalizeDurationStr(p.duration||'01:00:00');
+      const step = normalizeDurationStr(p.step||RAMP_STEP);
       return {
         type:'clouds',
         duration:duration,
@@ -721,16 +778,16 @@ function buildParts(){const parts=[];groups.forEach(g=>{const tu=TYPE_UNIT[g.typ
         cloud_drop_coeff: (Math.round((p.cloud_drop_coeff)*100)/100)
       };
     } else if(p.type==='sin'){
-      const duration = p.duration || '01:00:00';
-      const step = p.step || RAMP_STEP;
+      const duration = normalizeDurationStr(p.duration||'01:00:00');
+      const step = normalizeDurationStr(p.step||RAMP_STEP);
       return {
         type:'sin',
         duration:duration,
         step:step,
         min:p.min,
         max:p.max,
-        period:p.period,
-        phaseOffset:p.phaseOffset
+        period: normalizeDurationStr(p.period||'01:00:00'),
+        phaseOffset: normalizeDurationStr(p.phaseOffset||'00:00:00')
       };
     }
     return p;
@@ -878,8 +935,8 @@ function buildGroupsFromLoaded(data){
       if(p.type === 'clouds'){ // normalize to 'cloud' internally
         return {
           type:'cloud',
-          duration: p.duration || '01:00:00',
-          step: p.step || RAMP_STEP,
+          duration: normalizeDurationStr(p.duration||'01:00:00'),
+          step: normalizeDurationStr(p.step||RAMP_STEP),
           amplitude: p.amplitude,
           offset: p.offset,
           cloud_density: p.cloud_density,
@@ -894,20 +951,20 @@ function buildGroupsFromLoaded(data){
         return {
           type:'ramp',
           start:p.start, end:p.end,
-          duration:p.duration || '01:00:00',
-          step:p.step || RAMP_STEP
+          duration: normalizeDurationStr(p.duration||'01:00:00'),
+          step: normalizeDurationStr(p.step||RAMP_STEP)
         };
       } else if(p.type === 'sin'){
         return {
           type:'sin',
-          duration:p.duration || '01:00:00',
-          step:p.step || RAMP_STEP,
+          duration: normalizeDurationStr(p.duration||'01:00:00'),
+          step: normalizeDurationStr(p.step||RAMP_STEP),
           min:p.min, max:p.max,
-          period:p.period,
-          phaseOffset:p.phaseOffset
+          period: normalizeDurationStr(p.period||'01:00:00'),
+          phaseOffset: normalizeDurationStr(p.phaseOffset||'00:00:00')
         };
       } else if(p.type === 'const'){
-        return { type:'const', value:p.value, duration:p.duration || '01:00:00' };
+        return { type:'const', value:p.value, duration: normalizeDurationStr(p.duration||'01:00:00') };
       }
       return p;
     });
@@ -945,31 +1002,32 @@ if(fileInput){
       (function validateProfileMatch(){
         try{
           const parts = (data.sections && data.sections[0] && data.sections[0].parts) ? data.sections[0].parts : [];
-          // expected from current profile
-          const expectedOrder = TAB_ORDER.slice();
-          // Build expected machine vars order per group from MACHINE_VAR
-          const expectedByName = {};
-          expectedOrder.forEach(gn=>{
-            const mvMap = MACHINE_VAR[gn]||{};
-            expectedByName[gn] = Object.values(mvMap);
+          // Build expected union per display type from MACHINE_VAR
+          const expectedUnion = {};
+          TAB_ORDER.forEach(typeName=>{
+            const mvMap = MACHINE_VAR[typeName]||{};
+            expectedUnion[typeName] = new Set(Object.values(mvMap));
           });
-          // Compare counts and names
-          if(parts.length !== expectedOrder.length) throw new Error('Group count mismatch.');
-          for(let i=0;i<parts.length;i++){
-            const pn = parts[i]["group-name"];
-            const evn = expectedOrder[i];
-            if(pn !== evn) throw new Error(`Group mismatch at position ${i+1}: expected "${evn}", got "${pn}".`);
-            const gotVars = parts[i].vars || [];
-            const expVars = expectedByName[evn] || [];
-            if(gotVars.length !== expVars.length) throw new Error(`Variable count mismatch in "${evn}".`);
-            // Compare sets (order-insensitive)
-            const setA = new Set(gotVars), setB = new Set(expVars);
-            if(expVars.some(v=>!setA.has(v)) || gotVars.some(v=>!setB.has(v))){
-              throw new Error(`Variable names mismatch in "${evn}".`);
-            }
-          }
+          // Accumulate got union per display type (ignoring group names/order)
+          const gotUnion = {};
+          TAB_ORDER.forEach(t=> gotUnion[t]=new Set());
+          parts.forEach(part=>{
+            const dispType = machineToDisplayType(part.type) || part.type;
+            const vs = part.vars || [];
+            if(!(dispType in gotUnion)) gotUnion[dispType]=new Set();
+            vs.forEach(v=> gotUnion[dispType].add(v));
+          });
+          // Compare sets for each known type
+          TAB_ORDER.forEach(typeName=>{
+            const exp = expectedUnion[typeName] || new Set();
+            const got = gotUnion[typeName] || new Set();
+            // check all expected present
+            exp.forEach(v=>{ if(!got.has(v)) throw new Error(`Missing variable "${v}" for type "${typeName}".`); });
+            // and no extras beyond expected
+            got.forEach(v=>{ if(!exp.has(v)) throw new Error(`Unexpected variable "${v}" for type "${typeName}".`); });
+          });
         }catch(e){
-          alert('This FYT does not match the currently selected profile. ' + e.message);
+          alert('This FYT does not match the currently selected profile (union-of-vars check). ' + e.message);
           throw e;
         }
       })();
@@ -1004,7 +1062,7 @@ $('#btnSave').onclick=()=>{
   const data=buildProtocolJson(); if(!data) return;
 
   // Duration uniformity check
-  const totals = groups.map(g=>g.phases.reduce((s,p)=>s+hhmmssToSeconds(p.duration),0));
+  const totals = groups.map(g=>g.phases.reduce((s,p)=>s+durationToSeconds(p.duration),0));
   const allSame = totals.every(t=>t===totals[0]);
   if(!allSame){
     const ok = confirm('Not all variable groups have the same time duration. Do you want to save protocol anyway?');
