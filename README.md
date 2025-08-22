@@ -69,7 +69,8 @@ You can always edit groups and re-assign variables later, using the button at to
 
 The conversion from **% to SI (μE/m²/s/nm) is Linear** (with R2 > 0.98). To convert PPFD to percentage, use: 
 
-**(PPFD - b) / A**
+<p align="center"><b>(PPFD - b) / A</b></p>
+
 
 - This function work with larger error at less than 10%, but no larger than 2%.
 - **For Cool White, PPFD is calculated between 400-700 nm. For single color channels, PPFD is calculated based on their wavelength.** See Variable Meanings section.
