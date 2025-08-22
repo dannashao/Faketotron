@@ -714,7 +714,7 @@ $('#phOK').onclick=()=>{const g=groups.find(x=>x.id===activeGroupId);if(!g)retur
 /**
  * IMPORTANT — FYT header calculation (verified against machine files):
  * Let L = total file length in bytes (including 24-byte header, JSON with CRLF, and trailer).
- * Let T = L + 103.
+ * Let T = L + 104.
  * Let q = floor(T / 128).
  * hi = q - 1
  * lo = (T % 128) + 128
@@ -737,7 +737,7 @@ function formatJsonCRLF(obj){
   return JSON.stringify(obj,null,2).split("\n").map((l,i,a)=> i<a.length-1? l+"\r\n" : l).join("");
 }
 function computeHeaderBytes(totalLen){
-  const T = totalLen + 103;
+  const T = totalLen + 104;
   const q = Math.floor(T / 128);
   const hi = q - 1;
   const lo = (T % 128) + 128;
@@ -803,8 +803,29 @@ function buildProtocolJson(){
   return {description:desc,repeat:repeat,logic:logicVal,sections:[{parts:buildParts()}]};
 }
 
+function encodeULEB128(n){
+  const out=[];
+  do {
+    let byte = n & 0x7F;
+    n >>>= 7;
+    if(n !== 0) byte |= 0x80;
+    out.push(byte);
+  } while(n !== 0);
+  return new Uint8Array(out);
+}
+function decodeULEB128(u8, offset){
+  let result = 0, shift = 0, pos = offset;
+  while(true){
+    const byte = u8[pos++];
+    result |= (byte & 0x7F) << shift;
+    if((byte & 0x80) === 0) break;
+    shift += 7;
+  }
+  return { value: result, next: pos };
+}
+
 function buildFytBinary(data){
-  // 1) JSON for the FYT body must have description "" (desc goes to trailer)
+  // JSON (description must be empty inside the JSON)
   const jsonCRLF = formatJsonCRLF({
     description:"",
     repeat:data.repeat,
@@ -813,19 +834,22 @@ function buildFytBinary(data){
   });
   const jsonBytes = encodeUTF8(jsonCRLF);
 
-  // 2) Trailer: 0x00 if no description, otherwise UTF-8 description bytes
-  const desc = data.description || "";
-  const trailer = (desc.length===0) ? new Uint8Array([0x00]) : encodeUTF8(desc);
+  // Trailer = [ULEB128(descLen)] + [desc bytes]   (no backward compatibility path)
+  const descBytes = encodeUTF8(data.description || "");
+  const lenBytes = encodeULEB128(descBytes.length);
+  const trailer  = new Uint8Array(lenBytes.length + descBytes.length);
+  trailer.set(lenBytes, 0);
+  trailer.set(descBytes, lenBytes.length);
 
-  // 3) Compose with a temporary header to compute total length
-  const header = new Uint8Array(FIXED_HEADER_PREFIX); // 24 bytes; last 2 are placeholders
-  const totalLen = header.length + jsonBytes.length + trailer.length;
-
-  // 4) Compute and insert the two validation bytes at positions 22..23
-  const [lo, hi] = computeHeaderBytes(totalLen);
+  // Header bytes 22–23 MUST NOT depend on description length.
+  // Compute them from header+JSON only.
+  const header = new Uint8Array(FIXED_HEADER_PREFIX); // 24 bytes template
+  const lenForHeader = header.length + jsonBytes.length; // exclude trailer
+  const [lo, hi] = computeHeaderBytes(lenForHeader);
   header[22] = lo; header[23] = hi;
 
-  // 5) Final binary
+  // Final file = header + JSON + trailer (we still write the trailer bytes)
+  const totalLen = header.length + jsonBytes.length + trailer.length;
   const out = new Uint8Array(totalLen);
   out.set(header, 0);
   out.set(jsonBytes, header.length);
@@ -859,45 +883,43 @@ function bytesToString(u8){ return new TextDecoder().decode(u8); }
 function stringToBytes(s){ return new TextEncoder().encode(s); }
 
 function parseFytBytes(u8){
-  if(u8.length < 24){ throw new Error('File too small to be a FYT.'); }
-  // Check header prefix (first 22 bytes)
+  if(u8.length < 24) throw new Error('File too small to be a FYT.');
+
+  // (optional) prefix & header check — keep as-is
   for(let i=0;i<22;i++){
-    if(u8[i] !== FIXED_HEADER_PREFIX[i]){
-      // Not a hard error; some generators may differ slightly. Warn in console.
-      console.warn('Header prefix mismatch at byte', i);
-      break;
-    }
+    if(u8[i] !== FIXED_HEADER_PREFIX[i]){ console.warn('Header prefix mismatch at', i); break; }
   }
-  const totalLen = u8.length;
-  // Optional header check:
-  const [lo, hi] = computeHeaderBytes(totalLen);
-  if(u8[22]!== (lo&0xFF) || u8[23]!== (hi&0xFF)){
-    console.warn('Validation bytes do not match expected formula. Proceeding anyway.');
+  const [lo, hi] = computeHeaderBytes(/* we can use u8.length or skip check */ u8.length);
+  if(u8[22]!== (lo&0xFF) || u8[23]!== (hi&0xFF)){ console.warn('Validation bytes differ.'); }
+
+  // Body bytes
+  const body = u8.subarray(24);
+
+  // Find last '}' byte (0x7d) to delimit JSON
+  let jsonEnd = -1;
+  for(let i=body.length-1;i>=0;i--){ if(body[i]===0x7d){ jsonEnd = i; break; } }
+  if(jsonEnd === -1) throw new Error('Could not locate JSON body inside FYT.');
+
+  // Decode JSON (normalize CRLF -> LF for JS parser)
+  const jsonText = new TextDecoder().decode(body.subarray(0, jsonEnd+1)).replace(/\r\n/g, '\n');
+  let data;
+  try{ data = JSON.parse(jsonText); }
+  catch(e){ console.error('JSON parse error:', e, jsonText); throw new Error('Invalid JSON inside FYT.'); }
+
+  // Trailer: ULEB128 length + description bytes
+  const trailer = body.subarray(jsonEnd+1);
+  let desc = "";
+  if(trailer.length){
+    const { value: dlen, next: afterLen } = decodeULEB128(trailer, 0);
+    const end = afterLen + dlen;
+    if(end > trailer.length) throw new Error('Corrupted FYT trailer length.');
+    desc = new TextDecoder().decode(trailer.subarray(afterLen, end));
   }
 
-  // Body = JSON (CRLF, no trailing CRLF) + trailer (0x00 or UTF-8 description)
-  const body = u8.slice(24);
-  const bodyStr = bytesToString(body);
-  const lastBrace = bodyStr.lastIndexOf('}');
-  if(lastBrace === -1){ throw new Error('Could not locate JSON body inside FYT.'); }
-  const jsonText = bodyStr.slice(0, lastBrace+1).replace(/\r\n/g, '\n');
-  let data;
-  try{
-    data = JSON.parse(jsonText);
-  }catch(e){
-    console.error('JSON parse error:', e, jsonText);
-    throw new Error('Invalid JSON inside FYT.');
-  }
-  const trailerStr = bodyStr.slice(lastBrace+1);
-  let desc = '';
-  if(trailerStr.length>0){
-    // Trailer may be a single NUL or a UTF-8 description
-    const cleaned = trailerStr.replace(/\u0000/g, '');
-    desc = cleaned;
-  }
-  data.description = desc; // restore description into the model
+  data.description = desc;
   return data;
 }
+
 
 function machineToDisplayType(machineType){
   for(const disp in TYPE_UNIT){
