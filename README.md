@@ -25,7 +25,7 @@ This project is licensed under a custom **BSD-3-Clause Academic Use License**.
 This is **not** the standard BSD 3-Clause license — it includes a non-commercial restriction.  
 See [LICENSE](LICENSE) for details.
 
-# User Guide (v1.3)
+# User Guide (v1.4)
 Faketotron is a mock Fytotron Client's protocol editor. You can use it to customize your experiment protocol before we load it to the PSI instruments, including ME Chambers, Helios and Hades. It's a html based interface that can be opened with any browser.
 
 You can create any customized protocol with the interface, and download the configuration files (a machine readable .fyt file that can be loaded directly into the PSI systems, and a human-readable .json file for debugging). You can also Load .fyt file back to visualize.
