@@ -648,6 +648,7 @@ function buildPhaseFields(varType,phType){
 
 function readPhaseFromForm(varType){
   const t=$('#phType').value;const rng=RANGES[varType];
+  const tempDecimalAllowed=(varType==='Temperature');
   const asNumber=(raw)=>{const n=Number(raw);return Number.isFinite(n)?n:NaN;};
   const clampCheck=(raw,min,max,{requireInt=true}={})=>{
     const n=asNumber(raw);
