@@ -49,6 +49,7 @@ Similarly, we can set the CO2 level (ppm) changes as such, or set up watering sc
 1. Download the Faketotron html file and open it with your browser.
 
 2. Select the desired Profile (i.e. Chamber type) at top right corner from the scroll-down, then click NEW under Protocol File at right panel. (Note: Hades i.e. Hotel is here only for demonstration. Always contact m.pereiramendes@uu.nl for possibilities first.)
+
 ![Profile scroll-down](content_005.webp)
 <table><colgroup><col><col><col></colgroup><thead><tr><th><p>Faketotron Profile</p></th><th><p>Applies to</p></th><th><p>Code in Fytotron Client</p></th></tr></thead><tbody><tr><td><p>Fytotron (default)</p></td><td><p>Standard Chambers (PSI 1), Helios (PSI 5)</p></td><td><p>Chamber S., HeliosFyto</p></td></tr><tr><td><p>Extended Temperature</p></td><td><p>Extended Temperature Chambers (PSI 2)</p></td><td><p>Chamber T.</p></td></tr><tr><td><p>Daylight</p></td><td><p>Daylight Simulation Chambers (PSI 3)</p></td><td><p>Chamber D.</p></td></tr><tr><td><p>Hotel</p></td><td><p>Hades Growth rooms (PSI 4)</p></td><td><p>HadesFyto</p></td></tr></tbody></table>
 
@@ -104,7 +105,7 @@ TBA due to ongoing experiments
 
 - Wavelength Range from PSI documentation
 - No explicit mention of UVA values from PSI. This is a typical range.
-![Spectral specification from PSI documentation](content_002.webp))
+![Spectral specification from PSI documentation](content_002.webp)
 
 ### Cool White: Broad spectrum, 4,500 – 10,000 K (CCT)
 ![Cool White spectrum from PSI documents](content_003.webp)
