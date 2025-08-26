@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>Faketotron Client - Protocol Editor (v1.2.2)</title>
+<title>Faketotron Client - Protocol Editor (v1.4 Stab)</title>
 <meta http-equiv="X-UA-Compatible" content="IE=edge" />
 <link rel="icon", type="image/png", href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAYdJREFUWEftVjFuwzAMpN+QLWiWol/oLwxkzR/6j74lawD7FZ26dQiyJMjWN6iQAAoUS9lHJamXZnNM8Y68I+WOFv51C+PTP4HWDgSionv6GVa2hUDYXze0W58jSDwfQgjUdSmVO5/7QAR8PvT0/vqZSETwcRyp7/s/IxCBEonTdqBhGCS4WwpvByJAbr0QulkKD4EEzvp/P73Q6nIsfNAiBUogGy+2/uPtKxe/uhxT9UIKfgflhoK08ZiE7EAyRoMhUQLZeOx+HkEutwW8ZWzYhHrRJBmEQR+6iGRy99hZzGG2KlB2wyNlkQY5WGs7Qnw2/2xABcUi1ZQLOSR11m3nd5YBIX8gBNIIGg63POD2BULAuvvlfcAjqHPdtQNTXWBgd/WeRSS1loC6eitucloQCawEi36SIfMPx0x1oFal3gHyHpBXsRX3i9gcAekT1Af5gkQ+UucISJPppVOrtjDp/roJu/W5ioMQ0CNozTf6n1sCSXBqxFBfuAjATr4lsHUP3IJZnP0B6KuYITM8RzwAAAAASUVORK5CYII=">
 <style>
@@ -724,7 +724,8 @@ $('#phOK').onclick=()=>{const g=groups.find(x=>x.id===activeGroupId);if(!g)retur
  * - The JSON must be serialized with CRLF line endings and NO extra newline at the end.
  * - Inside the JSON, "description" must be "" (the human description is appended as trailer).
  * - Trailer is a single 0x00 byte if description is empty; otherwise, trailer is raw UTF‑8 description bytes.
- * - L must include: 24-byte fixed header + JSON bytes + trailer bytes (0x00 or desc UTF‑8).
+ * - L must include: 24-byte fixed header + JSON bytes + 1 if description is empty.
+ * - L must NOT include the description content and its length marker if the description is none empty.
  */
 const FIXED_HEADER_PREFIX = [
   0x11,0x46,0x79,0x74,0x6f,0x74,0x72,0x6f,0x6e,0x20,0x50,0x72,0x6f,0x74,0x6f,0x63,
@@ -834,7 +835,7 @@ function buildFytBinary(data){
   });
   const jsonBytes = encodeUTF8(jsonCRLF);
 
-  // Trailer = [ULEB128(descLen)] + [desc bytes]   (no backward compatibility path)
+  // Trailer = [ULEB128(descLen)] + [desc bytes]
   const descBytes = encodeUTF8(data.description || "");
   const lenBytes = encodeULEB128(descBytes.length);
   const trailer  = new Uint8Array(lenBytes.length + descBytes.length);
